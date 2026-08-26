@@ -15,6 +15,7 @@ const GalleryPage = React.lazy(() => import('../pages/GalleryPage').then(module 
 const EventsPage = React.lazy(() => import('../pages/EventsPage').then(module => ({ default: module.EventsPage })));
 const ToolsPage = React.lazy(() => import('../pages/ToolsPage').then(module => ({ default: module.ToolsPage })));
 const ArticlesPage = React.lazy(() => import('../pages/ArticlesPage').then(module => ({ default: module.ArticlesPage })));
+const ArticleDetailPage = React.lazy(() => import('../pages/ArticleDetailPage').then(module => ({ default: module.ArticleDetailPage })));
 const BookmarksPage = React.lazy(() => import('../pages/BookmarksPage').then(module => ({ default: module.BookmarksPage })));
 const NotFoundPage = React.lazy(() => import('../pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
 const AuthPage = React.lazy(() => import('../pages/AuthPage').then(module => ({ default: module.AuthPage })));
@@ -63,6 +64,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/prayer-times" element={<ToolsPage />} />
         <Route path="/calendar" element={<ToolsPage />} />
         <Route path="/articles" element={<ArticlesPage />} />
+        <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route path="/bookmarks" element={<BookmarksPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/settings" element={<SettingsPage />} />
