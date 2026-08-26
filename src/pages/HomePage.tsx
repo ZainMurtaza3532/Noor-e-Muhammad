@@ -21,7 +21,6 @@ import { BookmarkButton } from '../components/common/BookmarkButton';
 import { ShareModal } from '../components/common/ShareModal';
 import { IslamicPattern } from '../components/common/IslamicPattern';
 import { ISLAMIC_CONFIG } from '../config/islamicConfig';
-import { IslamicMarquee } from '../components/home/IslamicMarquee';
 
 // High-Performance Hero Background
 const HeroBackground = () => (
@@ -162,11 +161,6 @@ export const HomePage: React.FC = () => {
         </motion.div>
 
       </section>
-
-      {/* Islamic World Marquee Slider */}
-      <IslamicMarquee />
-
-
 
       {/* 3. 12 RABI-UL-AWWAL COUNTDOWN */}
       <section className="py-16 px-4">
