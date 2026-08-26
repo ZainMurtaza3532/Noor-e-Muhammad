@@ -345,7 +345,7 @@ export const HomePage: React.FC = () => {
                   </div>
                   <h3 className="font-serif text-xl font-bold text-islamic-cream">{d.title}</h3>
                   <p className="font-arabic text-2xl md:text-3xl text-islamic-gold leading-loose text-right drop-shadow-sm">{d.arabic}</p>
-                  <p className="font-serif text-[15px] text-islamic-cream/80 italic">"{d.translation}"</p>
+                  <p className="font-serif text-[15px] text-islamic-cream/80 italic">"{d.english}"</p>
                 </motion.div>
               ))}
             </motion.div>
