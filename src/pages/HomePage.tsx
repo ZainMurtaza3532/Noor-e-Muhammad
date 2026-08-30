@@ -395,9 +395,8 @@ export const HomePage: React.FC = () => {
                 <Sparkles className="w-5 h-5" />
                 Hadith of the Day
               </span>
-              
               <h3 className="font-arabic text-4xl md:text-5xl lg:text-7xl text-islamic-gold mb-10 leading-normal font-bold drop-shadow-md">
-                {featuredHadith.arabicText}
+                {featuredHadith.arabic}
               </h3>
               
               <p className="font-serif text-2xl md:text-4xl text-white italic mb-12 leading-relaxed font-light">
