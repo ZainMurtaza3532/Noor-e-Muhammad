@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 export const CommandPalette: React.FC = () => {
-  const { isSearchOpen, setSearchOpen, hadiths, duas, sunnahs, seerah, videos, events } = useAppStore();
+  const { isSearchOpen, setSearchOpen, hadiths, duas, sunnahs, videos } = useAppStore();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 

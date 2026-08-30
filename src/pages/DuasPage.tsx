@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { Search, Heart, Copy, Check, Share2, Filter } from 'lucide-react';
-import { useAppStore } from '../store/useAppStore';
+import React, { useState, useEffect } from 'react';
+import { Search, Copy, Check, Share2, Loader2, HeartHandshake } from 'lucide-react';
+import { duaApi, type Dua } from '../services/api/duaApi';
 import { BookmarkButton } from '../components/common/BookmarkButton';
 import { ShareModal } from '../components/common/ShareModal';
-import { IslamicPattern } from '../components/common/IslamicPattern';
 
 export const DuasPage: React.FC = () => {
-  const { duas } = useAppStore();
+  const [duas, setDuas] = useState<Dua[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -15,14 +16,29 @@ export const DuasPage: React.FC = () => {
     title: '',
     text: ''
   });
+  const [error, setError] = useState('');
 
-  const categories = ['All', 'Morning', 'Parents', 'Guidance', 'Forgiveness', 'Protection'];
+  useEffect(() => {
+    const fetchDuas = async () => {
+      try {
+        const data = await duaApi.getDuas();
+        const cats = await duaApi.getCategories();
+        setDuas(data);
+        setCategories(['All', ...cats]);
+      } catch (err) {
+        setError('Failed to load Duas.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDuas();
+  }, []);
 
   const filteredDuas = duas.filter((d) => {
     const matchesCategory = categoryFilter === 'All' || d.category === categoryFilter;
     const matchesSearch =
       d.title.toLowerCase().includes(search.toLowerCase()) ||
-      d.english.toLowerCase().includes(search.toLowerCase()) ||
+      d.translation.toLowerCase().includes(search.toLowerCase()) ||
       d.transliteration.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -34,49 +50,61 @@ export const DuasPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-islamic-deep text-islamic-cream pt-28 pb-20 px-4">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-islamic-cream text-gray-800 pt-28 pb-20 px-4 font-sans relative overflow-hidden">
+      
+      {/* Background Decorative Pattern */}
+      <div className="absolute inset-0 bg-[url('/pattern.png')] bg-repeat opacity-[0.02] mix-blend-overlay pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto space-y-10 relative z-10">
 
         {/* Header */}
         <div className="text-center space-y-4 mb-16 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-islamic-gold/10 to-transparent blur-3xl pointer-events-none" />
-          <span className="relative z-10 inline-block px-6 py-2 rounded-full bg-islamic-gold/10 border border-islamic-gold/40 text-islamic-gold font-serif text-[11px] font-bold uppercase tracking-[0.3em] backdrop-blur-xl shadow-gold-glow">
+          <span className="relative z-10 inline-block px-6 py-2 rounded-full bg-islamic-primary/10 border border-islamic-primary/20 text-islamic-deep font-serif text-[11px] font-bold uppercase tracking-[0.3em] backdrop-blur-xl">
+            <HeartHandshake className="w-3 h-3 inline-block mr-1" />
             Prophetic Supplications
           </span>
-          <h1 className="relative z-10 font-arabic text-4xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-islamic-cream to-islamic-gold/90 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] pb-2">
+          <h1 className="relative z-10 font-arabic text-4xl sm:text-6xl font-extrabold text-islamic-deep pb-2">
             الأَدْعِيَةُ وَالأَذْكَارُ
           </h1>
           <h2 className="relative z-10 font-serif text-2xl text-islamic-gold font-bold italic tracking-wide">
             Dua Center
           </h2>
-          <div className="w-24 h-[2px] bg-gradient-to-r from-transparent via-islamic-gold to-transparent mx-auto my-4 opacity-70" />
-          <p className="relative z-10 font-sans text-sm sm:text-base text-islamic-cream/70 max-w-2xl mx-auto leading-relaxed">
-            Authentic Quranic and Prophetic Duas with Arabic text, transliteration, English, Urdu, and verified sources.
+          <div className="w-24 h-[2px] bg-islamic-gold mx-auto my-4 opacity-70" />
+          <p className="relative z-10 font-sans text-sm sm:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Authentic Quranic and Prophetic Duas featuring Arabic text, transliteration for pronunciation, and English translation.
           </p>
         </div>
 
+        {error && (
+          <div className="text-red-400 text-center p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+            {error}
+          </div>
+        )}
+
         {/* Search & Category Filter */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="relative max-w-2xl mx-auto">
-            <Search className="absolute left-4 rtl:right-4 rtl:left-auto top-3.5 w-5 h-5 text-islamic-gold" />
+            <Search className="absolute left-5 rtl:right-5 rtl:left-auto top-4 w-5 h-5 text-islamic-gold" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Duas by title, transliteration, or meaning..."
-              className="w-full pl-12 rtl:pr-12 rtl:pl-4 py-3 rounded-2xl bg-islamic-primary/50 border border-islamic-gold/30 text-islamic-cream placeholder-islamic-cream/50 text-sm focus:outline-none focus:border-islamic-gold shadow-lg"
+              placeholder="Search Duas by title, meaning, or transliteration..."
+              className="w-full pl-14 rtl:pr-14 rtl:pl-4 py-4 rounded-2xl bg-white border border-gray-200 text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:border-islamic-primary focus:ring-1 focus:ring-islamic-primary transition-all shadow-sm"
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto pb-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-serif whitespace-nowrap transition-all ${categoryFilter === cat
-                    ? 'bg-islamic-gold text-islamic-deep font-bold shadow-gold-glow'
-                    : 'bg-islamic-primary/40 text-islamic-cream/80 border border-islamic-gold/15'
-                  }`}
+                className={`px-5 py-2.5 rounded-full text-[13px] font-serif transition-all duration-300 shadow-sm ${
+                  categoryFilter === cat
+                    ? 'bg-islamic-primary text-white font-bold shadow-md scale-105 border border-transparent'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-islamic-primary hover:bg-gray-50'
+                }`}
               >
                 {cat}
               </button>
@@ -84,65 +112,75 @@ export const DuasPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Dua Cards List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-          {filteredDuas.map((item) => (
-            <div key={item.id} className="p-8 sm:p-10 glass-card-premium rounded-3xl border border-islamic-gold/30 shadow-2xl space-y-5 flex flex-col justify-between hover:border-islamic-gold/60 transition-colors duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(212,175,55,0.2)]">
+        {loading ? (
+           <div className="flex justify-center py-20 text-islamic-gold">
+             <Loader2 className="w-12 h-12 animate-spin" />
+           </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-10 pt-8 max-w-4xl mx-auto">
+            {filteredDuas.map((item) => (
+              <div key={item.id} className="p-8 sm:p-12 bg-white border border-gray-200 rounded-3xl space-y-6 flex flex-col justify-between group shadow-sm transition-all duration-300">
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-islamic-gold/15 pb-4">
-                  <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-islamic-gold to-yellow-600 text-islamic-deep text-[10px] font-serif font-bold uppercase tracking-wider shadow-gold-glow">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                  <span className="px-4 py-1.5 rounded-full bg-islamic-gold/10 border border-islamic-gold/20 text-islamic-deep text-xs font-sans font-bold uppercase tracking-widest shadow-sm">
                     {item.category}
                   </span>
                   <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                    <BookmarkButton id={item.id} />
+                    <BookmarkButton id={`dua-${item.id}`} />
                     <button
-                      onClick={() => copyDua(item.id, `${item.title}\n${item.arabic}\n${item.english}`)}
-                      className="p-2 rounded-full bg-islamic-primary/60 text-islamic-cream/80 hover:text-islamic-gold"
+                      onClick={() => copyDua(item.id, `${item.title}\n\n${item.arabic}\n\n${item.transliteration}\n\n${item.translation}`)}
+                      className="p-2.5 rounded-full text-gray-400 hover:text-islamic-deep hover:bg-gray-50 transition-colors"
                     >
-                      {copiedId === item.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      {copiedId === item.id ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                     <button
-                      onClick={() => setShareData({ isOpen: true, title: item.title, text: `${item.arabic}\n\n${item.english}` })}
-                      className="p-2 rounded-full bg-islamic-primary/60 text-islamic-cream/80 hover:text-islamic-gold"
+                      onClick={() => setShareData({ isOpen: true, title: item.title, text: `${item.arabic}\n\n${item.translation}` })}
+                      className="p-2.5 rounded-full text-gray-400 hover:text-islamic-deep hover:bg-gray-50 transition-colors"
                     >
                       <Share2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                <h3 className="font-serif text-xl font-bold text-islamic-gold mt-2">{item.title}</h3>
+                <h3 className="font-serif text-2xl font-bold text-islamic-deep pt-2">{item.title}</h3>
 
-                <p className="font-arabic text-3xl sm:text-4xl text-islamic-gold text-right rtl:text-left leading-relaxed font-bold py-2 drop-shadow-md">
-                  {item.arabic}
-                </p>
-
-                <div className="space-y-2 bg-islamic-deep/40 p-4 rounded-xl border border-islamic-gold/10">
-                  <p className="text-[13px] font-serif text-islamic-goldLight/80 italic">
-                    <span className="font-bold text-islamic-gold uppercase text-[10px] tracking-widest not-italic">Pronunciation:</span><br />
-                    {item.transliteration}
+                <div className="py-4">
+                  <p className="font-arabic text-4xl sm:text-5xl text-islamic-deep text-right rtl:text-left leading-[2] sm:leading-[2.2] font-bold">
+                    {item.arabic}
                   </p>
                 </div>
 
-                <p className="text-sm text-islamic-cream/90 leading-relaxed font-serif font-light pt-2">
-                  <span className="font-bold text-islamic-gold uppercase text-[10px] tracking-widest">Meaning:</span><br />
-                  "{item.english}"
-                </p>
+                <div className="space-y-6 pt-6 border-t border-gray-100">
+                  {/* Transliteration */}
+                  <div className="relative">
+                    <p className="text-[15px] sm:text-base font-sans text-gray-500 italic pl-3 leading-relaxed tracking-wide border-l-2 border-gray-200">
+                      <span className="font-bold text-gray-400 uppercase text-[10px] tracking-widest not-italic block mb-1">Pronunciation</span>
+                      {item.transliteration}
+                    </p>
+                  </div>
 
-                {item.urdu && (
-                  <p className="font-urdu text-sm text-islamic-goldLight/90 leading-relaxed pt-3 border-t border-islamic-gold/10">
-                    <span className="font-sans font-bold text-islamic-gold uppercase text-[10px] tracking-widest">Urdu:</span><br />
-                    "{item.urdu}"
-                  </p>
-                )}
-              </div>
+                  {/* Translation */}
+                  <div className="relative pt-4">
+                    <p className="text-lg sm:text-xl text-gray-600 leading-relaxed font-serif pl-3 border-l-2 border-islamic-gold/40 font-light">
+                      <span className="font-bold text-islamic-gold uppercase text-[10px] tracking-widest block mb-1">Meaning</span>
+                      "{item.translation}"
+                    </p>
+                  </div>
+                </div>
 
-              <div className="pt-4 border-t border-islamic-gold/15 text-[11px] text-islamic-cream/60 font-serif flex items-center justify-between">
-                <span>Ref: {item.reference}</span>
+                <div className="pt-6 mt-4 border-t border-gray-50 text-[11px] text-gray-400 font-sans uppercase tracking-widest flex items-center justify-between">
+                  <span>Ref: {item.reference}</span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {filteredDuas.length === 0 && !loading && (
+          <div className="py-16 text-center text-islamic-cream/50 bg-islamic-primary/20 rounded-2xl border border-islamic-gold/10 max-w-2xl mx-auto">
+            <p className="font-serif text-lg">No supplications found for this category.</p>
+          </div>
+        )}
       </div>
 
       <ShareModal

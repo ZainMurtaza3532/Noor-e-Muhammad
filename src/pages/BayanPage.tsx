@@ -1,27 +1,48 @@
-import React, { useState } from 'react';
-import { Play, ExternalLink, Search, Video } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, ExternalLink, Search, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { BookmarkButton } from '../components/common/BookmarkButton';
 import { IslamicPattern } from '../components/common/IslamicPattern';
+import { youtubeApi } from '../services/api/youtubeApi';
+import type { MediaItem } from '../types';
 
 export const BayanPage: React.FC = () => {
-  const { bayans } = useAppStore();
+  const [bayans, setBayans] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const filteredBayans = bayans.filter(
-    (b) => b.title.toLowerCase().includes(search.toLowerCase()) || (b.speaker && b.speaker.toLowerCase().includes(search.toLowerCase()))
-  );
+  useEffect(() => {
+    const fetchBayans = async () => {
+      setLoading(true);
+      try {
+        const query = search.trim() ? search.trim() + ' islamic bayan' : 'islamic bayan';
+        const data = await youtubeApi.searchVideos(query, 12, 'Bayan');
+        setBayans(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const timeout = setTimeout(() => {
+      fetchBayans();
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const filteredBayans = bayans;
 
   return (
-    <div className="min-h-screen bg-islamic-deep text-islamic-cream pt-28 pb-20 px-4">
+    <div className="min-h-screen bg-islamic-cream text-gray-800 pt-28 pb-20 px-4">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
         <div className="text-center space-y-3">
           <span className="font-serif text-xs font-bold text-islamic-gold uppercase tracking-widest">Scholarly Guidance</span>
-          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-gold-gradient">الْمُحَاضَرَاتُ وَالْبَيَانَاتُ - Bayan & Lectures</h1>
-          <p className="font-sans text-sm text-islamic-cream/80 max-w-2xl mx-auto">
-            Inspiring lectures and Bayan sessions from Islamic scholars on the Seerah, Sunnah, and virtues of 12 Rabi-ul-Awwal.
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-islamic-deep">الْمُحَاضَرَاتُ وَالْبَيَانَاتُ - Bayan & Lectures</h1>
+          <p className="font-sans text-sm text-gray-600 max-w-2xl mx-auto">
+            Inspiring lectures and Bayan sessions from Islamic scholars on the Seerah, Sunnah, and Islamic virtues.
           </p>
           <IslamicPattern />
         </div>
@@ -34,14 +55,19 @@ export const BayanPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search Bayan by speaker or topic..."
-            className="w-full pl-12 rtl:pr-12 rtl:pl-4 py-3 rounded-2xl bg-islamic-primary/50 border border-islamic-gold/30 text-islamic-cream placeholder-islamic-cream/50 text-sm focus:outline-none focus:border-islamic-gold shadow-lg"
+            className="w-full pl-12 rtl:pr-12 rtl:pl-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:border-islamic-gold focus:ring-1 focus:ring-islamic-gold shadow-sm"
           />
         </div>
 
         {/* Bayan Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBayans.map((b) => (
-            <div key={b.id} className="glass-card-premium rounded-[2rem] overflow-hidden border border-islamic-gold/30 flex flex-col justify-between group hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(212,175,55,0.3)] transition-all duration-500">
+        {loading ? (
+          <div className="flex justify-center p-12 text-islamic-gold">
+            <Loader2 className="w-12 h-12 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBayans.map((b) => (
+              <div key={b.id} className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 flex flex-col justify-between group hover:-translate-y-2 hover:shadow-xl transition-all duration-500">
               
               <div className="relative aspect-video">
                 <img src={b.thumbnail} alt={b.title} className="w-full h-full object-cover" />
@@ -60,13 +86,13 @@ export const BayanPage: React.FC = () => {
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-islamic-gold/20 text-islamic-gold text-[10px] font-serif font-bold uppercase border border-islamic-gold/30">
-                      {b.category}
+                    <span className="px-2.5 py-0.5 rounded-full bg-islamic-accent text-islamic-primary text-[10px] font-serif font-bold uppercase">
+                      {b.category || b.mediaType}
                     </span>
                     <BookmarkButton id={b.id} />
                   </div>
-                  <h3 className="font-serif text-base font-bold text-islamic-cream line-clamp-2">{b.title}</h3>
-                  <p className="text-xs text-islamic-cream/70">Speaker: <strong className="text-islamic-gold">{b.speaker || b.channelName}</strong></p>
+                  <h3 className="font-serif text-base font-bold text-islamic-deep line-clamp-2">{b.title}</h3>
+                  <p className="text-xs text-gray-500">Speaker: <strong className="text-islamic-primary">{b.speaker || b.channelName}</strong></p>
                 </div>
 
                 <a
@@ -82,6 +108,7 @@ export const BayanPage: React.FC = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

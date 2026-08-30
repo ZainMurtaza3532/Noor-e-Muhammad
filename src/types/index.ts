@@ -25,7 +25,7 @@ export type ContentCategory =
   | 'Guidance'
   | 'General';
 
-export type MediaType = 'Naat' | 'Bayan' | 'Lecture' | 'Seerah' | 'Quran' | 'Hadith' | 'Sunnah' | 'Reminder' | 'RabiUlAwwal';
+export type MediaType = 'Naat' | 'Bayan' | 'Lecture' | 'Seerah' | 'Quran' | 'Hadith' | 'Sunnah' | 'Reminder' | 'RabiUlAwwal' | 'Kids Islamic Content';
 
 export interface HadithItem {
   id: string;
@@ -67,21 +67,6 @@ export interface SunnahItem {
   status: 'published' | 'draft' | 'archived';
 }
 
-export interface SeerahItem {
-  id: string;
-  title: string;
-  period: 'Birth & Early Life' | 'Childhood & Youth' | 'First Revelation' | 'Makkan Period' | 'Hijrah' | 'Madinan Period' | 'Conquest of Makkah' | 'Farewell Sermon' | 'Legacy';
-  yearHijri?: string;
-  yearGregorian?: string;
-  description: string;
-  location?: string;
-  historicalSource: string;
-  relatedHadithRef?: string;
-  relatedQuranRef?: string;
-  keyLessons: string[];
-  featured?: boolean;
-  status: 'published' | 'draft' | 'archived';
-}
 
 export interface MediaItem {
   id: string;
@@ -101,43 +86,6 @@ export interface MediaItem {
   publishedAt: string;
 }
 
-export interface GalleryItem {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  category: 'Madinah' | 'Makkah' | 'Masjid' | 'Geometric Art' | 'Quran' | 'Moon' | 'Lanterns';
-  source: string;
-  attribution: string;
-  featured?: boolean;
-  status: 'published' | 'draft' | 'archived';
-}
-
-export interface EventItem {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  organizer: string;
-  speaker: string;
-  mapLink?: string;
-  registrationLink?: string;
-  imageUrl?: string;
-  featured?: boolean;
-  status: 'published' | 'draft' | 'archived';
-}
-
-export interface SpeakerItem {
-  id: string;
-  name: string;
-  photoUrl: string;
-  biography: string;
-  topic: string;
-  socialLink?: string;
-  featured?: boolean;
-}
 
 export interface ReminderItem {
   id: string;
@@ -171,7 +119,6 @@ export interface QuranAyah {
 export interface SiteSettings {
   siteTitle: string;
   subtitle: string;
-  rabiUlAwwalTargetDate: string;
   announcementBanner?: string;
   showBanner: boolean;
   primaryLanguage: Language;

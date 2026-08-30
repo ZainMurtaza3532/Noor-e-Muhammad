@@ -31,8 +31,12 @@ export const AudioPlayerBar: React.FC = () => {
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => {
-      setIsPlaying(false);
-      pauseAudio();
+      if (currentAudio.playlist) {
+        useAppStore.getState().playNextInPlaylist();
+      } else {
+        setIsPlaying(false);
+        pauseAudio();
+      }
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);

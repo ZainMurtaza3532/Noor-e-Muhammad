@@ -5,10 +5,7 @@ import type {
   HadithItem, 
   DuaItem, 
   SunnahItem, 
-  SeerahItem, 
   MediaItem, 
-  GalleryItem, 
-  EventItem, 
   ReminderItem, 
   SiteSettings, 
   AdminUser,
@@ -18,12 +15,8 @@ import type {
 import { initialHadiths } from '../data/hadith';
 import { initialDuas } from '../data/duas';
 import { initialSunnahs } from '../data/sunnah';
-import { initialSeerah } from '../data/seerah';
-import { initialNaats } from '../data/naats';
 import { initialBayans } from '../data/bayans';
 import { initialVideos } from '../data/videos';
-import { initialGallery } from '../data/gallery';
-import { initialEvents } from '../data/events';
 import { initialReminders } from '../data/reminders';
 import { ISLAMIC_CONFIG } from '../config/islamicConfig';
 import { auth } from '../config/firebase';
@@ -34,6 +27,8 @@ interface AudioState {
   reciter: string;
   audioUrl: string;
   isPlaying: boolean;
+  playlist?: string[];
+  playlistIndex?: number;
 }
 
 interface AppStore {
@@ -56,12 +51,8 @@ interface AppStore {
   hadiths: HadithItem[];
   duas: DuaItem[];
   sunnahs: SunnahItem[];
-  seerah: SeerahItem[];
-  naats: MediaItem[];
   bayans: MediaItem[];
   videos: MediaItem[];
-  gallery: GalleryItem[];
-  events: EventItem[];
   reminders: ReminderItem[];
 
   // Admin & Settings State
@@ -77,6 +68,8 @@ interface AppStore {
 
   // Audio Actions
   playAudio: (title: string, reciter: string, audioUrl: string) => void;
+  playPlaylist: (title: string, reciter: string, playlist: string[]) => void;
+  playNextInPlaylist: () => void;
   pauseAudio: () => void;
   stopAudio: () => void;
 
@@ -120,12 +113,6 @@ interface AppStore {
   addMediaItem: (item: Omit<MediaItem, 'id' | 'publishedAt'>) => void;
   updateMediaItem: (id: string, item: Partial<MediaItem>) => void;
   deleteMediaItem: (id: string) => void;
-
-  addGalleryItem: (item: Omit<GalleryItem, 'id'>) => void;
-  deleteGalleryItem: (id: string) => void;
-
-  addEvent: (item: Omit<EventItem, 'id'>) => void;
-  deleteEvent: (id: string) => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -148,12 +135,8 @@ export const useAppStore = create<AppStore>()(
       hadiths: initialHadiths,
       duas: initialDuas,
       sunnahs: initialSunnahs,
-      seerah: initialSeerah,
-      naats: initialNaats,
       bayans: initialBayans,
       videos: initialVideos,
-      gallery: initialGallery,
-      events: initialEvents,
       reminders: initialReminders,
 
       adminUser: null,
@@ -161,9 +144,8 @@ export const useAppStore = create<AppStore>()(
       siteSettings: {
         siteTitle: ISLAMIC_CONFIG.titleEnglish,
         subtitle: ISLAMIC_CONFIG.subtitle,
-        rabiUlAwwalTargetDate: ISLAMIC_CONFIG.targetDate,
         showBanner: true,
-        announcementBanner: '🌙 Welcome to Noor-e-Muhammad ﷺ — 12 Rabi-ul-Awwal Experience Platform.',
+        announcementBanner: 'Welcome to Noor-e-Muhammad ﷺ — Online Islamic Academy.',
         primaryLanguage: 'en',
         defaultTheme: 'dark',
         contactEmail: 'contact@nooremumuhammad.islam',
@@ -192,6 +174,37 @@ export const useAppStore = create<AppStore>()(
       // Audio Actions
       playAudio: (title, reciter, audioUrl) => {
         set({ currentAudio: { title, reciter, audioUrl, isPlaying: true } });
+      },
+      playPlaylist: (title, reciter, playlist) => {
+        if (playlist.length === 0) return;
+        set({
+          currentAudio: {
+            title,
+            reciter,
+            audioUrl: playlist[0],
+            isPlaying: true,
+            playlist,
+            playlistIndex: 0
+          }
+        });
+      },
+      playNextInPlaylist: () => {
+        const audio = get().currentAudio;
+        if (audio?.playlist && audio.playlistIndex !== undefined) {
+          const nextIndex = audio.playlistIndex + 1;
+          if (nextIndex < audio.playlist.length) {
+            set({
+              currentAudio: {
+                ...audio,
+                audioUrl: audio.playlist[nextIndex],
+                playlistIndex: nextIndex,
+                isPlaying: true
+              }
+            });
+            return;
+          }
+        }
+        get().pauseAudio();
       },
       pauseAudio: () => {
         const audio = get().currentAudio;
@@ -348,41 +361,24 @@ export const useAppStore = create<AppStore>()(
         };
         set(state => {
           const updatedVideos = [newItem, ...state.videos];
-          const updatedNaats = item.mediaType === 'Naat' ? [newItem, ...state.naats] : state.naats;
           const updatedBayans = item.mediaType === 'Bayan' ? [newItem, ...state.bayans] : state.bayans;
-          return { videos: updatedVideos, naats: updatedNaats, bayans: updatedBayans };
+          return { videos: updatedVideos, bayans: updatedBayans };
         });
       },
       updateMediaItem: (id, item) => {
         set(state => ({
           videos: state.videos.map(v => v.id === id ? { ...v, ...item } : v),
-          naats: state.naats.map(n => n.id === id ? { ...n, ...item } : n),
           bayans: state.bayans.map(b => b.id === id ? { ...b, ...item } : b)
         }));
       },
       deleteMediaItem: (id) => {
         set(state => ({
           videos: state.videos.filter(v => v.id !== id),
-          naats: state.naats.filter(n => n.id !== id),
           bayans: state.bayans.filter(b => b.id !== id)
         }));
-      },
-
-      addGalleryItem: (item) => {
-        const newItem: GalleryItem = { ...item, id: `g-${Date.now()}` };
-        set(state => ({ gallery: [newItem, ...state.gallery] }));
-      },
-      deleteGalleryItem: (id) => {
-        set(state => ({ gallery: state.gallery.filter(g => g.id !== id) }));
-      },
-
-      addEvent: (item) => {
-        const newEvent: EventItem = { ...item, id: `e-${Date.now()}` };
-        set(state => ({ events: [newEvent, ...state.events] }));
-      },
-      deleteEvent: (id) => {
-        set(state => ({ events: state.events.filter(e => e.id !== id) }));
       }
+
+
     }),
     {
       name: 'noor-e-muhammad-storage',
@@ -396,12 +392,8 @@ export const useAppStore = create<AppStore>()(
         hadiths: state.hadiths,
         duas: state.duas,
         sunnahs: state.sunnahs,
-        seerah: state.seerah,
         videos: state.videos,
-        naats: state.naats,
         bayans: state.bayans,
-        gallery: state.gallery,
-        events: state.events,
         reminders: state.reminders,
         siteSettings: state.siteSettings,
         adminUser: state.adminUser,

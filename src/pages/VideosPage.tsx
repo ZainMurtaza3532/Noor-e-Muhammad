@@ -1,31 +1,61 @@
-import React, { useState } from 'react';
-import { Play, ExternalLink, Search, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, ExternalLink, Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { BookmarkButton } from '../components/common/BookmarkButton';
 import { IslamicPattern } from '../components/common/IslamicPattern';
+import { youtubeApi } from '../services/api/youtubeApi';
+import type { MediaItem } from '../types';
 
 export const VideosPage: React.FC = () => {
-  const { videos } = useAppStore();
+  const [videos, setVideos] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [mediaTypeFilter, setMediaTypeFilter] = useState('All');
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const VIDEOS_PER_PAGE = 12;
   const mediaTypes = ['All', 'Naat', 'Bayan', 'Seerah', 'Quran', 'Kids Islamic Content'];
 
-  const filteredVideos = videos.filter((v) => {
-    const matchesCategory = mediaTypeFilter === 'All' || v.mediaType === mediaTypeFilter || v.category === mediaTypeFilter;
-    const matchesSearch = v.title.toLowerCase().includes(search.toLowerCase()) || v.channelName.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  useEffect(() => {
+    const fetchVideos = async () => {
+      setLoading(true);
+      try {
+        const query = search.trim();
+        const data = await youtubeApi.searchVideos(query, 12, mediaTypeFilter as any);
+        setVideos(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Add a slight debounce so we don't spam the API on every keystroke
+    const timeout = setTimeout(() => {
+      fetchVideos();
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [search, mediaTypeFilter]);
+
+  // Reset to page 1 when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, mediaTypeFilter]);
+
+  const totalPages = Math.ceil(videos.length / VIDEOS_PER_PAGE);
+  const paginatedVideos = videos.slice(
+    (currentPage - 1) * VIDEOS_PER_PAGE,
+    currentPage * VIDEOS_PER_PAGE
+  );
 
   return (
-    <div className="min-h-screen bg-islamic-deep text-islamic-cream pt-28 pb-20 px-4">
+    <div className="min-h-screen bg-islamic-cream text-gray-800 pt-28 pb-20 px-4">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
         <div className="text-center space-y-3">
           <span className="font-serif text-xs font-bold text-islamic-gold uppercase tracking-widest">Islamic Video Hub</span>
-          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-gold-gradient">الْمَقَاطِعُ الإِسْلَامِيَّةُ - Islamic Videos</h1>
-          <p className="font-sans text-sm text-islamic-cream/80 max-w-2xl mx-auto">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-islamic-deep">الْمَقَاطِعُ الإِسْلَامِيَّةُ - Islamic Videos</h1>
+          <p className="font-sans text-sm text-gray-600 max-w-2xl mx-auto">
             A curated repository of verified Naats, Bayans, Quran recitations, Seerah documentaries, and kids Islamic content.
           </p>
           <IslamicPattern />
@@ -40,7 +70,7 @@ export const VideosPage: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search videos by title or channel..."
-              className="w-full pl-12 rtl:pr-12 rtl:pl-4 py-3 rounded-2xl bg-islamic-primary/50 border border-islamic-gold/30 text-islamic-cream placeholder-islamic-cream/50 text-sm focus:outline-none focus:border-islamic-gold shadow-lg"
+              className="w-full pl-12 rtl:pr-12 rtl:pl-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:border-islamic-gold focus:ring-1 focus:ring-islamic-gold shadow-sm"
             />
           </div>
 
@@ -51,8 +81,8 @@ export const VideosPage: React.FC = () => {
                 onClick={() => setMediaTypeFilter(type)}
                 className={`px-4 py-2 rounded-xl text-xs font-serif whitespace-nowrap transition-all ${
                   mediaTypeFilter === type 
-                    ? 'bg-islamic-gold text-islamic-deep font-bold shadow-gold-glow' 
-                    : 'bg-islamic-primary/40 text-islamic-cream/80 border border-islamic-gold/15'
+                    ? 'bg-islamic-primary text-white font-bold shadow-md' 
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-islamic-gold'
                 }`}
               >
                 {type}
@@ -62,9 +92,14 @@ export const VideosPage: React.FC = () => {
         </div>
 
         {/* Video Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVideos.map((v) => (
-            <div key={v.id} className="glass-card glass-card-hover rounded-3xl overflow-hidden border border-islamic-gold/30 flex flex-col justify-between">
+        {loading ? (
+          <div className="flex justify-center p-12 text-islamic-gold">
+            <Loader2 className="w-12 h-12 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paginatedVideos.map((v) => (
+            <div key={v.id} className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 flex flex-col justify-between group hover:-translate-y-2 hover:shadow-xl transition-all duration-500">
               
               <div className="relative aspect-video">
                 <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" />
@@ -83,20 +118,20 @@ export const VideosPage: React.FC = () => {
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-islamic-gold/20 text-islamic-gold text-[10px] font-serif font-bold uppercase border border-islamic-gold/30">
+                    <span className="px-2.5 py-0.5 rounded-full bg-islamic-accent text-islamic-primary text-[10px] font-serif font-bold uppercase">
                       {v.mediaType || v.category}
                     </span>
                     <BookmarkButton id={v.id} />
                   </div>
-                  <h3 className="font-serif text-base font-bold text-islamic-cream line-clamp-2">{v.title}</h3>
-                  <p className="text-xs text-islamic-cream/70">Channel: <strong className="text-islamic-gold">{v.channelName}</strong></p>
+                  <h3 className="font-serif text-base font-bold text-islamic-deep line-clamp-2">{v.title}</h3>
+                  <p className="text-xs text-gray-500">Channel: <strong className="text-islamic-primary">{v.channelName}</strong></p>
                 </div>
 
                 <a
                   href={v.youtubeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-islamic-gold/20 hover:bg-islamic-gold/30 text-islamic-gold border border-islamic-gold/40 text-xs font-serif font-bold text-center flex items-center justify-center gap-2 shadow-gold-glow transition-all"
+                  className="w-full py-2.5 rounded-xl btn-primary text-[12px] text-center flex items-center justify-center gap-2"
                 >
                   <span>Watch Video on YouTube</span>
                   <ExternalLink className="w-4 h-4" />
@@ -105,6 +140,29 @@ export const VideosPage: React.FC = () => {
             </div>
           ))}
         </div>
+        )}
+        {/* Pagination Controls */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-12">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-full bg-white border border-gray-200 text-islamic-deep disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <span className="font-serif text-sm font-bold text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-full bg-white border border-gray-200 text-islamic-deep disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
